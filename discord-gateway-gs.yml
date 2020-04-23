@@ -1,0 +1,57 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: discord-gateway-gs
+  labels:
+    app: discord-gateway-gs
+    tier: backend
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: discord-gateway-gs
+        tier: backend
+    spec:
+      containers:
+      - name: gatewaygs-cluster
+        image: gcr.io/cloudcord/discord-gateway-gs
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: "1"
+          requests:
+            cpu: "0.5"
+        env:
+        - name: MIX_ENV
+          value: prod
+        - name: MY_BASENAME
+          value: discord-gateway-gs
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: REPLACE_OS_VARS
+          value: "true"
+        - name: RELEASE_CONFIG_DIR
+          value: /beamconfig
+        - name: ERLANG_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: app-config
+              key: erlang-cookie
+        volumeMounts:
+        - name: config-volume
+          mountPath: /beamconfig
+      volumes:
+      - name: config-volume
+        configMap:
+          name: vm-config
